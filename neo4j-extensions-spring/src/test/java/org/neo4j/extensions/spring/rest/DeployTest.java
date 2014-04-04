@@ -3,25 +3,30 @@ package org.neo4j.extensions.spring.rest;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Arrays;
 
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
+import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
+import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.neo4j.extensions.client.UserClient;
+import org.neo4j.extensions.spring.domain.FriendResult;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.kernel.GraphDatabaseAPI;
 import org.neo4j.server.CommunityNeoServer;
 import org.neo4j.server.helpers.CommunityServerBuilder;
-
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-
+/**
+ * Test server deploys successfully.
+ *
+ * @author joemoore
+ * @version 0.1.0
+ * @since 0.1.0
+ */
 @SuppressWarnings("deprecation")
 public class DeployTest {
     private GraphDatabaseAPI db;
@@ -30,7 +35,6 @@ public class DeployTest {
     @Before
     public void before() throws IOException {
         ServerSocket serverSocket = new ServerSocket(0);
-
         server = CommunityServerBuilder
                 .server()
                 .onPort(serverSocket.getLocalPort())
@@ -49,26 +53,23 @@ public class DeployTest {
 
     @Test
     public void shouldCreateUser() {
+        Response response = getClient().create(false);
+        FriendResult result = response.readEntity(FriendResult.class);
 
-        JsonNode response = jerseyClient()
-                .resource(server.baseUri().toString() + "extensions-spring/user/create?indexingOn=false")
-                .accept(MediaType.APPLICATION_JSON)
-                .post(ClientResponse.class)
-                .getEntity(JsonNode.class);
-
-        Assert.assertNotNull(response.get("user").asText());
-        Assert.assertNotNull(response.get("friends").asText());
+        Assert.assertNotNull(result.getFriends());
+        Assert.assertNotNull(result.getUser());
         Transaction tx = db.beginTx();
-        Node node = db.getNodeById(response.get("user").get("id").asLong());
+        Node node = db.getNodeById(result.getUser().getId());
         Assert.assertNotNull(node.getProperty("createdTime").toString());
-        Assert.assertEquals(node.getProperty("createdTime").toString(), response.get("user").get("createdTime").asText());
+        Assert.assertEquals(node.getProperty("createdTime").toString(), result.getUser().getCreatedTime().toString());
         tx.success();
         tx.close();
     }
 
-    private Client jerseyClient() {
-        DefaultClientConfig defaultClientConfig = new DefaultClientConfig();
-        defaultClientConfig.getClasses().add(JacksonJsonProvider.class);
-        return Client.create(defaultClientConfig);
+    private UserClient getClient() {
+        JSONProvider jsonP = new JSONProvider();
+        jsonP.setSupportUnwrapped(true);
+        jsonP.setDropRootElement(true);
+        return JAXRSClientFactory.create(server.baseUri().toString() + "extensions-spring", UserClient.class, Arrays.asList(new JSONProvider[] {jsonP}));
     }
 }
