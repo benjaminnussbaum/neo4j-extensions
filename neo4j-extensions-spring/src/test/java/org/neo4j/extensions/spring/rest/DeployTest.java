@@ -1,6 +1,5 @@
 package org.neo4j.extensions.spring.rest;
 
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Arrays;
@@ -29,6 +28,7 @@ import org.neo4j.server.helpers.CommunityServerBuilder;
  */
 @SuppressWarnings("deprecation")
 public class DeployTest {
+
     private GraphDatabaseAPI db;
     private CommunityNeoServer server;
 
@@ -72,4 +72,5 @@ public class DeployTest {
         jsonP.setDropRootElement(true);
         return JAXRSClientFactory.create(server.baseUri().toString() + "extensions-spring", UserClient.class, Arrays.asList(new JSONProvider[] {jsonP}));
     }
+
 }

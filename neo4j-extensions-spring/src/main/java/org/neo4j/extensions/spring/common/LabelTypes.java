@@ -2,6 +2,7 @@ package org.neo4j.extensions.spring.common;
 
 import org.neo4j.graphdb.Label;
 
+
 /**
  * Relationship types.
  *

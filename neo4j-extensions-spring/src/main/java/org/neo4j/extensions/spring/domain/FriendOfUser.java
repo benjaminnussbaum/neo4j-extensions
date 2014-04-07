@@ -1,5 +1,9 @@
 package org.neo4j.extensions.spring.domain;
 
+import java.io.Serializable;
+
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.neo4j.extensions.spring.common.RelationshipConstants;
 import org.neo4j.graphdb.RelationshipType;
@@ -7,9 +11,6 @@ import org.springframework.data.neo4j.annotation.EndNode;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.RelationshipEntity;
 import org.springframework.data.neo4j.annotation.StartNode;
-
-import javax.xml.bind.annotation.XmlRootElement;
-import java.io.Serializable;
 
 /**
  * Friend of User relationship.
