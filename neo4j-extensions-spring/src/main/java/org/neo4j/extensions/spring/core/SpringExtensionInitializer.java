@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  * Hook for Spring initialization
  *
  * @author bradnussbaum
+ * @author joemoore
  * @version 0.1.0
  * @since 0.1.0
  */
@@ -24,7 +25,8 @@ public class SpringExtensionInitializer extends SpringPluginInitializer {
 
     public SpringExtensionInitializer() {
         super(new String[]{
-                "META-INF/spring/springContext.xml"
+                "META-INF/spring/springContext.xml",
+                "META-INF/spring/integrationContext.xml"
         }, expose("neo4jTemplate", Neo4jTemplate.class), expose("userRepository", UserRepository.class));
         LOGGER.info("Spring context configured.");
     }

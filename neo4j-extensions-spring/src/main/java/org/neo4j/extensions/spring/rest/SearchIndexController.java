@@ -52,7 +52,40 @@ public class SearchIndexController implements SearchIndexClient {
 
         // log details
         LOGGER.debug(String.format(
-                "SearchIndexZeroController: TX: processTime=%dms",
+                "SearchIndexKafkaController: TX: processTime=%dms",
+                processTimeTx));
+        return Response.ok().build();
+    }
+    
+    
+    public Response indexUsersActiveMq() {
+        LOGGER.info(String
+                .format("User search index start"));
+        long startTimeTx = System.currentTimeMillis();
+
+        // capture times
+        long successTimeTx = System.currentTimeMillis();
+        long processTimeTx = successTimeTx - startTimeTx;
+
+        // log details
+        LOGGER.debug(String.format(
+                "SearchIndexActiveController: TX: processTime=%dms",
+                processTimeTx));
+        return Response.ok().build();
+    }
+    
+    public Response indexUsersRabbitMq() {
+        LOGGER.info(String
+                .format("User search index start"));
+        long startTimeTx = System.currentTimeMillis();
+
+        // capture times
+        long successTimeTx = System.currentTimeMillis();
+        long processTimeTx = successTimeTx - startTimeTx;
+
+        // log details
+        LOGGER.debug(String.format(
+                "SearchIndexRabbitController: TX: processTime=%dms",
                 processTimeTx));
         return Response.ok().build();
     }

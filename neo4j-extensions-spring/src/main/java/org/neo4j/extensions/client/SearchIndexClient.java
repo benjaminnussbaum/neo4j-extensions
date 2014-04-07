@@ -29,5 +29,18 @@ public interface SearchIndexClient {
     @Path("/kafka/users")
     Response indexUsersKafka() ;
     
+    /**
+     * @return Status 200 on success.
+     */
+    @POST
+    @Path("/activemq/users")
+    Response indexUsersActiveMq();
+    /**
+     * @return Status 200 on success.
+     */
+    @POST
+    @Path("/rabbitmq/users")
+    Response indexUsersRabbitMq();
+    
     
 }
