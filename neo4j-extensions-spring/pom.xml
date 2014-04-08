@@ -28,6 +28,23 @@
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
 		</dependency>
+		
+		<!-- com.mediahound.search -->
+		<dependency>
+			<groupId>com.mediahound.search</groupId>
+			<artifactId>hound-search-core</artifactId>
+		</dependency>
+		<!-- com.mediahound.graph -->
+		<dependency>
+			<groupId>com.mediahound.graph</groupId>
+			<artifactId>hound-graph-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.mediahound.graph</groupId>
+			<artifactId>hound-graph-core</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
 
 		<!-- org.apache.activemq -->
 		<dependency>

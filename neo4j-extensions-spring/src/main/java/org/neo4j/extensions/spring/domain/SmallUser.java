@@ -27,7 +27,7 @@ import java.util.Set;
 @NodeEntity
 @XmlRootElement
 @JsonAutoDetect
-public class User implements Serializable {
+public class SmallUser implements Serializable {
 
     private static final long serialVersionUID = 678183622990845243L;
 
@@ -73,7 +73,7 @@ public class User implements Serializable {
     private Boolean validated;
 
     @RelatedTo(type = RelationshipConstants.FRIEND_OF, direction = Direction.OUTGOING)
-    private Set<User> friends;
+    private Set<SmallUser> friends;
 
     public Long getId() {
         return id;
@@ -179,11 +179,11 @@ public class User implements Serializable {
         this.validated = validated;
     }
 
-    public Set<User> getFriends() {
+    public Set<SmallUser> getFriends() {
         return friends;
     }
 
-    public void setFriends(Set<User> friends) {
+    public void setFriends(Set<SmallUser> friends) {
         this.friends = friends;
     }
 
@@ -198,7 +198,7 @@ public class User implements Serializable {
         if (obj.getClass() != getClass()) {
             return false;
         }
-        User rhs = (User) obj;
+        SmallUser rhs = (SmallUser) obj;
         return new org.apache.commons.lang3.builder.EqualsBuilder()
                 .append(this.id, rhs.id)
                 .append(this.version, rhs.version)

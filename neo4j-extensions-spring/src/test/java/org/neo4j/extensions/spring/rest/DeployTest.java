@@ -12,13 +12,17 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.neo4j.extensions.client.SearchIndexClient;
 import org.neo4j.extensions.client.UserClient;
 import org.neo4j.extensions.spring.domain.FriendResult;
+import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.kernel.GraphDatabaseAPI;
 import org.neo4j.server.CommunityNeoServer;
 import org.neo4j.server.helpers.CommunityServerBuilder;
+import org.springframework.data.neo4j.server.ProvidedClassPathXmlApplicationContext;
+
+import com.mediahound.graph.test.domain.BookDataOnDemand;
 /**
  * Test server deploys successfully.
  *
@@ -26,11 +30,14 @@ import org.neo4j.server.helpers.CommunityServerBuilder;
  * @version 0.1.0
  * @since 0.1.0
  */
-@SuppressWarnings("deprecation")
 public class DeployTest {
 
-    private GraphDatabaseAPI db;
+    private GraphDatabaseService db;
     private CommunityNeoServer server;
+    
+    private ProvidedClassPathXmlApplicationContext ctx;
+    
+    private BookDataOnDemand bookData;
 
     @Before
     public void before() throws IOException {
@@ -43,6 +50,10 @@ public class DeployTest {
                 .build();
         server.start();
         db = server.getDatabase().getGraph();
+        ctx = new ProvidedClassPathXmlApplicationContext( db, new String[]{
+                "META-INF/spring/test-springContext.xml"
+        } );
+        bookData = ctx.getBean("bookDataOnDemand", BookDataOnDemand.class);
         serverSocket.close();
     }
 
@@ -65,12 +76,26 @@ public class DeployTest {
         tx.success();
         tx.close();
     }
+    
+    @Test
+    public void shouldIndexBooks() {
+        bookData.init();
+        bookData.getManyNewPersisted();
+        Response response = getIndexClient().indexBooksZero();
+    }
 
     private UserClient getClient() {
         JSONProvider jsonP = new JSONProvider();
         jsonP.setSupportUnwrapped(true);
         jsonP.setDropRootElement(true);
         return JAXRSClientFactory.create(server.baseUri().toString() + "extensions-spring", UserClient.class, Arrays.asList(new JSONProvider[] {jsonP}));
+    }
+    
+    private SearchIndexClient getIndexClient() {
+        JSONProvider jsonP = new JSONProvider();
+        jsonP.setSupportUnwrapped(true);
+        jsonP.setDropRootElement(true);
+        return JAXRSClientFactory.create(server.baseUri().toString() + "extensions-spring", SearchIndexClient.class, Arrays.asList(new JSONProvider[] {jsonP}));
     }
 
 }

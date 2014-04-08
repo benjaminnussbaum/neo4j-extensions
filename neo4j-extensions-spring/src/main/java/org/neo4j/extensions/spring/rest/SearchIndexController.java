@@ -1,13 +1,20 @@
 package org.neo4j.extensions.spring.rest;
 
+import java.util.Iterator;
+
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.neo4j.extensions.client.SearchIndexClient;
-import org.neo4j.extensions.spring.repository.UserRepository;
+import org.neo4j.extensions.spring.common.OutboundGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.neo4j.conversion.EndResult;
+
+import com.mediahound.graph.domain.Book;
+import com.mediahound.graph.service.BookService;
 
 /**
  * The Search Indexing controller with zeromq.
@@ -23,11 +30,15 @@ public class SearchIndexController implements SearchIndexClient {
             .getLogger(SearchIndexController.class);
 
     @Context
-    private UserRepository userRepository;
+    private BookService bookService;
+    
+    @Context
+    private OutboundGateway outboundGateway;
+    
+    private static final int BATCH_SIZE = 500;
 
-    public Response indexUsersZero() {
-        LOGGER.info(String
-                .format("User search index start"));
+    public Response indexBooksZero() {
+        LOGGER.info(String.format("Book search index start"));
         long startTimeTx = System.currentTimeMillis();
 
         // capture times
@@ -38,12 +49,17 @@ public class SearchIndexController implements SearchIndexClient {
         LOGGER.debug(String.format(
                 "SearchIndexZeroController: TX: processTime=%dms",
                 processTimeTx));
-        return Response.ok().build();
+        Long booksSize = bookService.countAll();
+        LOGGER.info(String.format("Total Books: %d", booksSize.intValue()));
+        int totalPages = booksSize.intValue() % BATCH_SIZE;
+        for (int i = 0; i <= totalPages; i++) {
+            outboundGateway.sendBookRangeToActiveMq(i, BATCH_SIZE);
+        }
+        return Response.ok(String.format("Total Books: %d", booksSize.intValue())).build();
     }
-    
-    public Response indexUsersKafka() {
-        LOGGER.info(String
-                .format("User search index start"));
+
+    public Response indexBooksKafka() {
+        LOGGER.info(String.format("Book search index start"));
         long startTimeTx = System.currentTimeMillis();
 
         // capture times
@@ -54,13 +70,17 @@ public class SearchIndexController implements SearchIndexClient {
         LOGGER.debug(String.format(
                 "SearchIndexKafkaController: TX: processTime=%dms",
                 processTimeTx));
-        return Response.ok().build();
+        Long booksSize = bookService.countAll();
+        LOGGER.info(String.format("Total Books: %d", booksSize.intValue()));
+        int totalPages = booksSize.intValue() % BATCH_SIZE;
+        for (int i = 0; i <= totalPages; i++) {
+            outboundGateway.sendBookRangeToActiveMq(i, BATCH_SIZE);
+        }
+        return Response.ok(String.format("Total Books: %d", booksSize.intValue())).build();
     }
-    
-    
-    public Response indexUsersActiveMq() {
-        LOGGER.info(String
-                .format("User search index start"));
+
+    public Response indexBooksActiveMq() {
+        LOGGER.info(String.format("Book search index start"));
         long startTimeTx = System.currentTimeMillis();
 
         // capture times
@@ -71,12 +91,17 @@ public class SearchIndexController implements SearchIndexClient {
         LOGGER.debug(String.format(
                 "SearchIndexActiveController: TX: processTime=%dms",
                 processTimeTx));
-        return Response.ok().build();
+        Long booksSize = bookService.countAll();
+        LOGGER.info(String.format("Total Books: %d", booksSize.intValue()));
+        int totalPages = booksSize.intValue() % BATCH_SIZE;
+        for (int i = 0; i <= totalPages; i++) {
+            outboundGateway.sendBookRangeToActiveMq(i, BATCH_SIZE);
+        }
+        return Response.ok(String.format("Total Books: %d", booksSize.intValue())).build();
     }
-    
-    public Response indexUsersRabbitMq() {
-        LOGGER.info(String
-                .format("User search index start"));
+
+    public Response indexBooksRabbitMq() {
+        LOGGER.info(String.format("Book search index start"));
         long startTimeTx = System.currentTimeMillis();
 
         // capture times
@@ -87,7 +112,13 @@ public class SearchIndexController implements SearchIndexClient {
         LOGGER.debug(String.format(
                 "SearchIndexRabbitController: TX: processTime=%dms",
                 processTimeTx));
-        return Response.ok().build();
+        Long booksSize = bookService.countAll();
+        LOGGER.info(String.format("Total Books: %d", booksSize.intValue()));
+        int totalPages = booksSize.intValue() % BATCH_SIZE;
+        for (int i = 0; i <= totalPages; i++) {
+            outboundGateway.sendBookRangeToRabbit(i, BATCH_SIZE);
+        }
+        return Response.ok(String.format("Total Books: %d", booksSize.intValue())).build();
     }
 
 }

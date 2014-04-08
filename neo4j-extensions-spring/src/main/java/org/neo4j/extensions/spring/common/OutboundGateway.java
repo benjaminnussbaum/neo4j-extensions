@@ -1,9 +1,21 @@
 package org.neo4j.extensions.spring.common;
 
-import org.neo4j.extensions.spring.domain.User;
+
 
 
 public interface OutboundGateway {
     
-    public void sendToRabbit(User user);
+    public void sendToRabbit(Object object);
+    
+    public void sendToActiveMq(Object object);
+    
+    public void sendToZero(Object object);
+    
+    public void sendToKafka(Object object);
+    
+    public void sendBookRangeToRabbit(int start, int end);
+    
+    public void sendBookRangeToActiveMq(int start, int end);
+    
+    
 }

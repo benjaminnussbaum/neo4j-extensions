@@ -9,8 +9,8 @@ import javax.ws.rs.core.Response;
 
 import org.neo4j.extensions.client.UserClient;
 import org.neo4j.extensions.spring.domain.FriendResult;
-import org.neo4j.extensions.spring.domain.User;
-import org.neo4j.extensions.spring.repository.UserRepository;
+import org.neo4j.extensions.spring.domain.SmallUser;
+import org.neo4j.extensions.spring.repository.SmallUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,7 @@ public class UserController implements UserClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
     @Context
-    private UserRepository userRepository;
+    private SmallUserRepository userRepository;
 
     /**
      * @return Status 201 on success.
@@ -38,25 +38,25 @@ public class UserController implements UserClient {
         long startTimeTx = System.currentTimeMillis();
 
         // create user
-        User user = new User();
+        SmallUser user = new SmallUser();
         // create friend 1
-        User friend1 = new User();
+        SmallUser friend1 = new SmallUser();
         // create friend 2
-        User friend2 = new User();
+        SmallUser friend2 = new SmallUser();
 
         // establish friends for user
-        Set<User> friends = new LinkedHashSet<User>();
+        Set<SmallUser> friends = new LinkedHashSet<SmallUser>();
         friends.add(friend1);
         friends.add(friend2);
         user.setFriends(friends);
 
         // establish friends for friend 1
-        Set<User> friend1Friends = new LinkedHashSet<>();
+        Set<SmallUser> friend1Friends = new LinkedHashSet<>();
         friend1Friends.add(user);
         friend1.setFriends(friend1Friends);
 
         // establish friends for friend 2
-        Set<User> friend2Friends = new LinkedHashSet<>();
+        Set<SmallUser> friend2Friends = new LinkedHashSet<>();
         friend2Friends.add(user);
         friend2.setFriends(friend2Friends);
 
@@ -64,8 +64,8 @@ public class UserController implements UserClient {
         user = userRepository.save(user);
 
         // lookup to validate being saved
-        User userActual = userRepository.findOne(user.getId());
-        Set<User> friendsActual = userActual.getFriends();
+        SmallUser userActual = userRepository.findOne(user.getId());
+        Set<SmallUser> friendsActual = userActual.getFriends();
 
         // assemble result package
         FriendResult result = new FriendResult();

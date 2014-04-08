@@ -30,10 +30,10 @@ public class FriendOfUser implements RelationshipType, Serializable {
     private Long id;
 
     @StartNode
-    private User user;
+    private SmallUser user;
 
     @EndNode
-    private User friend;
+    private SmallUser friend;
 
     public Long getId() {
         return id;
@@ -43,19 +43,19 @@ public class FriendOfUser implements RelationshipType, Serializable {
         this.id = id;
     }
 
-    public User getUser() {
+    public SmallUser getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(SmallUser user) {
         this.user = user;
     }
 
-    public User getFriend() {
+    public SmallUser getFriend() {
         return friend;
     }
 
-    public void setFriend(User friend) {
+    public void setFriend(SmallUser friend) {
         this.friend = friend;
     }
 

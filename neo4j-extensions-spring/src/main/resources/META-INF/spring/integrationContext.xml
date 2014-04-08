@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans:beans xmlns="http://www.springframework.org/schema/integration"
-             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xmlns:beans="http://www.springframework.org/schema/beans"
-             xmlns:jms="http://www.springframework.org/schema/integration/jms"
-             xmlns:rabbit="http://www.springframework.org/schema/rabbit"
-             xmlns:int-amqp="http://www.springframework.org/schema/integration/amqp"
-             xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
-             xsi:schemaLocation="http://www.springframework.org/schema/beans
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:jms="http://www.springframework.org/schema/integration/jms"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xmlns:int-amqp="http://www.springframework.org/schema/integration/amqp"
+	xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
 			http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
 			http://www.springframework.org/schema/integration/amqp http://www.springframework.org/schema/integration/amqp/spring-integration-amqp.xsd
 			http://www.springframework.org/schema/integration
@@ -14,43 +14,48 @@
 			http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd
 			http://www.springframework.org/schema/integration/jms
 			http://www.springframework.org/schema/integration/jms/spring-integration-jms-3.0.xsd
-			http://www.springframework.org/schema/integration/kafka http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd">
+			http://www.springframework.org/schema/integration/kafka http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
+			http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
 
-	<gateway id="jobGateway" service-interface="org.neo4j.extensions.spring.common.OutboundGateway">
-        <method name="sendToRabbit" request-channel="toRabbit"/>
-       <!--  <method name="sendJobId" request-channel="jobIdChannel"/>
-        <method name="sendJobs" request-channel="jobListChannel"/> -->
-    </gateway>
+	<gateway id="outboundGateway"
+		service-interface="org.neo4j.extensions.spring.common.OutboundGateway">
+		<method name="sendToRabbit" request-channel="toRabbit" />
+		<method name="sendBookRangeToRabbit" request-channel="bookIdsToRabbit"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
+		<method name="sendToActiveMq" request-channel="toRabbit" />
+		<method name="sendBookRangeToActiveMq" request-channel="bookIdsToActiveMQ"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
+	</gateway>
 
 
-   <!--  <beans:bean id="connectionFactoryExceptionListener"
-                class="com.sony.spe.mc.config.core.listener.ConnectionFactoryExceptionListener"/> -->
-    <beans:bean id="activeMQConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
-        <beans:property name="brokerURL" value="failover:(${mh.amq.broker.url})"/>
-        <beans:property name="userName" value="${mh.amq.broker.username}"/>
-        <beans:property name="password" value="${mh.amq.broker.password}"/>
-        <beans:property name="clientID" value="${mh.amq.broker.clientID}"/>
-        <beans:property name="warnAboutUnstartedConnectionTimeout" value="500"/>
-    </beans:bean>
+	<!-- <beans:bean id="connectionFactoryExceptionListener" class="com.sony.spe.mc.config.core.listener.ConnectionFactoryExceptionListener"/> -->
+	<beans:bean id="activeMQConnectionFactory"
+		class="org.apache.activemq.ActiveMQConnectionFactory">
+		<beans:property name="brokerURL" value="failover:(${mh.amq.broker.url})" />
+		<beans:property name="userName" value="${mh.amq.broker.username}" />
+		<beans:property name="password" value="${mh.amq.broker.password}" />
+		<beans:property name="clientID" value="${mh.amq.broker.clientID}" />
+		<beans:property name="warnAboutUnstartedConnectionTimeout"
+			value="500" />
+	</beans:bean>
 
-    <!-- Defines a caching connection factory to connect to the ActiveMQ 
-        Broker -->
-    <beans:bean id="connectionFactory"
-                class="org.springframework.jms.connection.CachingConnectionFactory">
-        <beans:property name="targetConnectionFactory" ref="activeMQConnectionFactory"/>
-        <beans:property name="sessionCacheSize" value="100"/>
-        <beans:property name="cacheProducers" value="false"/>
-        <beans:property name="cacheConsumers" value="false"/>
-        <beans:property name="reconnectOnException" value="true"/>
-        <!-- <beans:property name="exceptionListener" ref="connectionFactoryExceptionListener"/> -->
-    </beans:bean>
-    
-    <!-- RabbitMq -->
-    <rabbit:connection-factory id="connectionFactory" />
+	<!-- Defines a caching connection factory to connect to the ActiveMQ Broker -->
+	<beans:bean id="connectionFactory"
+		class="org.springframework.jms.connection.CachingConnectionFactory">
+		<beans:property name="targetConnectionFactory" ref="activeMQConnectionFactory" />
+		<beans:property name="sessionCacheSize" value="100" />
+		<beans:property name="cacheProducers" value="false" />
+		<beans:property name="cacheConsumers" value="false" />
+		<beans:property name="reconnectOnException" value="true" />
+		<!-- <beans:property name="exceptionListener" ref="connectionFactoryExceptionListener"/> -->
+	</beans:bean>
 
-	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory" />
+	<!-- RabbitMq -->
+	<rabbit:connection-factory id="rabbitConnectionFactory" />
 
-	<rabbit:admin connection-factory="connectionFactory" />
+	<rabbit:template id="amqpTemplate" connection-factory="rabbitConnectionFactory" />
+
+	<rabbit:admin connection-factory="rabbitConnectionFactory" />
 
 	<rabbit:queue name="si.test.queue" />
 
@@ -59,76 +64,89 @@
 			<rabbit:binding queue="si.test.queue" key="si.test.binding" />
 		</rabbit:bindings>
 	</rabbit:direct-exchange>
-	
-	<channel id="toRabbit" />
+
+	<publish-subscribe-channel id="toRabbit" task-executor="messageExecutor"/>
+
+	<publish-subscribe-channel id="bookIdsToRabbit" task-executor="messageExecutor"/>
 
 	<int-amqp:outbound-channel-adapter
-		channel="toRabbit" amqp-template="amqpTemplate" exchange-name="si.test.exchange"
-		routing-key="si.test.binding" />
-	
-	<!-- Kafka -->
-	
-	<int-kafka:producer-context id="kafkaProducerContext">
-        <int-kafka:producer-configurations>
-            <!-- <int-kafka:producer-configuration broker-list="localhost:9092"
-                       key-class-type="java.lang.String"
-                       value-class-type="java.lang.String"
-                       topic="test1"
-                       value-encoder="kafkaEncoder"
-                       key-encoder="kafkaEncoder"
-                       compression-codec="default"/> -->
-            <int-kafka:producer-configuration broker-list="localhost:9092"
-                       topic="test2"
-                       compression-codec="default"
-                       async="true"/>
-            <int-kafka:producer-configuration broker-list="localhost:9092"
-                        topic="regextopic.*"
-                        compression-codec="default"/>
-        </int-kafka:producer-configurations>
-    </int-kafka:producer-context>
-    
-    <!-- ZeroMq --> 
-    
-    <beans:bean id="jeroMqPub" class="org.neo4j.extensions.spring.common.JeroMQPublisher" 
-		init-method="init" destroy-method="cleanUp"/>
+	channel="toRabbit" amqp-template="amqpTemplate" exchange-name="si.test.exchange"
+	routing-key="si.test.binding" />
+		
+	<chain id="bookRabbitChain" input-channel="bookIdsToRabbit"
+		output-channel="toRabbit">
+		<service-activator expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+	</chain>
 
-    <!-- Gateway for sending job related data -->
-    <!-- <gateway id="jobGateway" service-interface="com.sony.spe.mc.mh.gateway.JobSendingGateway">
-        <method name="sendJob" request-channel="jobChannel"/>
-        <method name="sendJobId" request-channel="jobIdChannel"/>
-        <method name="sendJobs" request-channel="jobListChannel"/>
-    </gateway> -->
-    <!-- Channel for job events -->
-    <!-- <publish-subscribe-channel id="jobChannel"
-                               datatype="com.sony.spe.mc.mh.domain.Job"
-                               ignore-failures="false"
-                               error-handler="channelErrorHandler"
-                               task-executor="messageExecutor"/> -->
-    <!-- Channel for job id -->
-    <!-- <channel id="jobIdChannel" datatype="java.lang.Long">
-        <dispatcher task-executor="messageExecutor"/>
-    </channel>
-    Convert from job id to job with details
-    <service-activator input-channel="jobIdChannel"
-                       output-channel="jobChannel" ref="jobService" method="getDetailsForLastModifiedStage"/> -->
-    <!-- Processes a job event by id -->
-    <!-- <service-activator input-channel="jobIdChannel" ref="jobRuleService" method="processJobById"/> -->
-    <!-- Channel for job lists -->
-    <!-- <channel id="jobListChannel" datatype="java.util.List"/> -->
-    <!-- Channel for splitting job lists -->
-    <!-- <splitter input-channel="jobListChannel"
-              output-channel="jobChannel"/> -->
-    <!-- Chain for channeling job to topic -->
-    <!-- <chain id="jobTopicChain" input-channel="jobChannel">
-        <transformer id="jobTransformer" ref="mhConversionService"
-                     method="convertToFlat"/>
-        <object-to-json-transformer/>
-        <jms:outbound-channel-adapter destination="jobProxyEventUpdateTopic"/>
-    </chain>
-    Topic for job proxy event updates
-    <beans:bean id="jobProxyEventUpdateTopic" class="org.apache.activemq.command.ActiveMQTopic">
-        <beans:constructor-arg value="com.sony.spe.mc.mh.job.event.update.topic"/>
-    </beans:bean>
- -->
+	<!-- Kafka -->
+
+	<int-kafka:producer-context id="kafkaProducerContext">
+		<int-kafka:producer-configurations>
+			<!-- <int-kafka:producer-configuration broker-list="localhost:9092" key-class-type="java.lang.String" 
+				value-class-type="java.lang.String" topic="test1" value-encoder="kafkaEncoder" 
+				key-encoder="kafkaEncoder" compression-codec="default"/> -->
+			<int-kafka:producer-configuration
+				broker-list="localhost:9092" topic="test2" compression-codec="default"
+				async="true" />
+			<int-kafka:producer-configuration
+				broker-list="localhost:9092" topic="regextopic.*" compression-codec="default" />
+		</int-kafka:producer-configurations>
+	</int-kafka:producer-context>
+
+	<!-- ZeroMq -->
+
+	<beans:bean id="jeroMqPub"
+		class="org.neo4j.extensions.spring.common.JeroMQPublisher"
+		init-method="init" destroy-method="cleanUp" />
+
+	<!-- ActiveMQ -->
+	<publish-subscribe-channel id="toActiveMQ" task-executor="messageExecutor"/>
+
+	<publish-subscribe-channel id="bookIdsToActiveMQ" task-executor="messageExecutor"/>
+
+	<beans:bean id="searchUpdateTopic" class="org.apache.activemq.command.ActiveMQTopic">
+		<beans:constructor-arg value="com.mediahound.search.update.topic" />
+	</beans:bean>
+
+	<chain id="bookActiveMQ" input-channel="bookIdsToActiveMQ">
+		<service-activator expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+		<jms:outbound-channel-adapter 
+		destination="searchUpdateTopic" />
+	</chain>
+
+	<!-- Gateway for sending job related data -->
+	<!-- <gateway id="jobGateway" service-interface="com.sony.spe.mc.mh.gateway.JobSendingGateway"> 
+		<method name="sendJob" request-channel="jobChannel"/> <method name="sendJobId" 
+		request-channel="jobIdChannel"/> <method name="sendJobs" request-channel="jobListChannel"/> 
+		</gateway> -->
+	<!-- Channel for job events -->
+	<!-- <publish-subscribe-channel id="jobChannel" datatype="com.sony.spe.mc.mh.domain.Job" 
+		ignore-failures="false" error-handler="channelErrorHandler" task-executor="messageExecutor"/> -->
+	<!-- Channel for job id -->
+	<!-- <channel id="jobIdChannel" datatype="java.lang.Long"> <dispatcher task-executor="messageExecutor"/> 
+		</channel> Convert from job id to job with details <service-activator input-channel="jobIdChannel" 
+		output-channel="jobChannel" ref="jobService" method="getDetailsForLastModifiedStage"/> -->
+	<!-- Processes a job event by id -->
+	<!-- <service-activator input-channel="jobIdChannel" ref="jobRuleService" 
+		method="processJobById"/> -->
+	<!-- Channel for job lists -->
+	<!-- <channel id="jobListChannel" datatype="java.util.List"/> -->
+	<!-- Channel for splitting job lists -->
+	<!-- <splitter input-channel="jobListChannel" output-channel="jobChannel"/> -->
+	<!-- Chain for channeling job to topic -->
+	<!-- <chain id="jobTopicChain" input-channel="jobChannel"> <transformer 
+		id="jobTransformer" ref="mhConversionService" method="convertToFlat"/> <object-to-json-transformer/> 
+		<jms:outbound-channel-adapter destination="jobProxyEventUpdateTopic"/> </chain> 
+		Topic for job proxy event updates <beans:bean id="jobProxyEventUpdateTopic" 
+		class="org.apache.activemq.command.ActiveMQTopic"> <beans:constructor-arg 
+		value="com.sony.spe.mc.mh.job.event.update.topic"/> </beans:bean> -->
+<!-- Task Config  -->
+<task:executor id="messageExecutor" pool-size="25"
+                   queue-capacity="10000"/>
+                  <!--  rejection-policy="DISCARD_OLDEST"/> -->
 
 </beans:beans>

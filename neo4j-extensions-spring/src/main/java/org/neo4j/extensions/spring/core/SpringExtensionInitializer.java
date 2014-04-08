@@ -1,15 +1,18 @@
 package org.neo4j.extensions.spring.core;
 
+import java.util.Collection;
+import java.util.logging.Logger;
+
 import org.apache.commons.configuration.Configuration;
-import org.neo4j.extensions.spring.repository.UserRepository;
+import org.neo4j.extensions.spring.common.OutboundGateway;
+import org.neo4j.extensions.spring.repository.SmallUserRepository;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.server.plugins.Injectable;
 import org.springframework.data.neo4j.server.SpringPluginInitializer;
 import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.util.Assert;
 
-import java.util.Collection;
-import java.util.logging.Logger;
+import com.mediahound.graph.service.BookService;
 
 /**
  * Hook for Spring initialization
@@ -27,7 +30,9 @@ public class SpringExtensionInitializer extends SpringPluginInitializer {
         super(new String[]{
                 "META-INF/spring/springContext.xml",
                 "META-INF/spring/integrationContext.xml"
-        }, expose("neo4jTemplate", Neo4jTemplate.class), expose("userRepository", UserRepository.class));
+        }, expose("neo4jTemplate", Neo4jTemplate.class), expose("smallUserRepository", SmallUserRepository.class)
+        , expose("bookServiceImpl", BookService.class)
+        , expose("outboundGateway", OutboundGateway.class));
         LOGGER.info("Spring context configured.");
     }
 
@@ -42,7 +47,7 @@ public class SpringExtensionInitializer extends SpringPluginInitializer {
             Assert.notNull(neo4jTemplate, "Spring Data Neo4j failed to initialize!");
             LOGGER.info("Successfully loaded neo4jTemplate.");
             LOGGER.info("Loading userRepository...");
-            UserRepository userRepository = ctx.getBean(UserRepository.class);
+            SmallUserRepository userRepository = ctx.getBean(SmallUserRepository.class);
             Assert.notNull(userRepository, "Spring Data Neo4j failed to initialize!");
             LOGGER.info("Successfully loaded userRepository.");
         } catch (Exception e) {

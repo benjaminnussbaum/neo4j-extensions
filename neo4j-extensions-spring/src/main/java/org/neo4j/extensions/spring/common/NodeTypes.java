@@ -1,6 +1,6 @@
 package org.neo4j.extensions.spring.common;
 
-import org.neo4j.extensions.spring.domain.User;
+import org.neo4j.extensions.spring.domain.SmallUser;
 
 /**
  * Node types.
@@ -11,7 +11,7 @@ import org.neo4j.extensions.spring.domain.User;
  */
 public enum NodeTypes {
 
-    USER(User.class.getName(), User.class.getSimpleName());
+    USER(SmallUser.class.getName(), SmallUser.class.getSimpleName());
 
     private String className;
 

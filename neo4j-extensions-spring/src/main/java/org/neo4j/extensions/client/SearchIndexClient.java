@@ -19,28 +19,28 @@ public interface SearchIndexClient {
      * @return Status 200 on success.
      */
     @POST
-    @Path("/zero/users")
-    Response indexUsersZero() ;
+    @Path("/zero/books")
+    Response indexBooksZero() ;
     
     /**
      * @return Status 200 on success.
      */
     @POST
-    @Path("/kafka/users")
-    Response indexUsersKafka() ;
+    @Path("/kafka/books")
+    Response indexBooksKafka() ;
     
     /**
      * @return Status 200 on success.
      */
     @POST
-    @Path("/activemq/users")
-    Response indexUsersActiveMq();
+    @Path("/activemq/books")
+    Response indexBooksActiveMq();
     /**
      * @return Status 200 on success.
      */
     @POST
-    @Path("/rabbitmq/users")
-    Response indexUsersRabbitMq();
+    @Path("/rabbitmq/books")
+    Response indexBooksRabbitMq();
     
     
 }
