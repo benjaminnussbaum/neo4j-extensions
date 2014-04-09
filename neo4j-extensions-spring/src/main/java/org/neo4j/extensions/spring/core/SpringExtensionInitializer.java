@@ -12,6 +12,7 @@ import org.springframework.data.neo4j.server.SpringPluginInitializer;
 import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.util.Assert;
 
+import com.mediahound.graph.service.AlbumService;
 import com.mediahound.graph.service.BookService;
 
 /**
@@ -31,6 +32,7 @@ public class SpringExtensionInitializer extends SpringPluginInitializer {
                 "META-INF/spring/springContext.xml",
                 "META-INF/spring/integrationContext.xml"
         }, expose("neo4jTemplate", Neo4jTemplate.class), expose("smallUserRepository", SmallUserRepository.class)
+        , expose("albumServiceImpl", AlbumService.class)
         , expose("bookServiceImpl", BookService.class)
         , expose("outboundGateway", OutboundGateway.class));
         LOGGER.info("Spring context configured.");

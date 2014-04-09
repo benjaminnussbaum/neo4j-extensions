@@ -10,18 +10,7 @@
         http://www.springframework.org/schema/data/neo4j http://www.springframework.org/schema/data/neo4j/spring-neo4j.xsd
         http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
 
-	<bean id="configCoreProperties"
-		class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
-		<property name="nullValue" value="null" />
-		<property name="ignoreResourceNotFound" value="false" />
-		<property name="ignoreUnresolvablePlaceholders" value="true" />
-		<property name="locations">
-			<list>
-				<!-- Common Properties -->
-				<value>classpath*:META-INF/spring/general.properties</value>
-			</list>
-		</property>
-	</bean>
+	<context:property-placeholder location="classpath*:META-INF/spring/general.properties"/>
 
 	<context:annotation-config />
 

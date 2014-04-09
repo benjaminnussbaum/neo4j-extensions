@@ -10,7 +10,9 @@
         http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
 
 
+
 	<import resource="classpath*:META-INF/spring/springContext.xml"/>
+	<import resource="classpath*:META-INF/spring/test-integrationContext.xml"/>
     <context:component-scan base-package="com.mediahound.graph.test">
 		<context:exclude-filter type="annotation"
 			expression="org.springframework.stereotype.Controller" />

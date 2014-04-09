@@ -20,10 +20,18 @@
 	<gateway id="outboundGateway"
 		service-interface="org.neo4j.extensions.spring.common.OutboundGateway">
 		<method name="sendToRabbit" request-channel="toRabbit" />
+		<method name="sendAlbumRangeToRabbit" request-channel="albumIdsToRabbit"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
 		<method name="sendBookRangeToRabbit" request-channel="bookIdsToRabbit"
 			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
 		<method name="sendToActiveMq" request-channel="toRabbit" />
+		<method name="sendAlbumRangeToActiveMq" request-channel="albumIdsToActiveMQ"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
 		<method name="sendBookRangeToActiveMq" request-channel="bookIdsToActiveMQ"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
+		<method name="sendAlbumRangeToKafka" request-channel="albumIdsToKafka"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
+		<method name="sendBookRangeToKafka" request-channel="bookIdsToKafka"
 			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
 	</gateway>
 
@@ -34,10 +42,14 @@
 		<beans:property name="brokerURL" value="failover:(${mh.amq.broker.url})" />
 		<beans:property name="userName" value="${mh.amq.broker.username}" />
 		<beans:property name="password" value="${mh.amq.broker.password}" />
-		<beans:property name="clientID" value="${mh.amq.broker.clientID}" />
+		<!-- <beans:property name="clientID" value="${mh.amq.broker.clientID}" 
+			/> -->
 		<beans:property name="warnAboutUnstartedConnectionTimeout"
 			value="500" />
 	</beans:bean>
+
+	<beans:bean id="connectionFactoryExceptionListener"
+		class="org.neo4j.extensions.spring.common.listener.ConnectionFactoryExceptionListener" />
 
 	<!-- Defines a caching connection factory to connect to the ActiveMQ Broker -->
 	<beans:bean id="connectionFactory"
@@ -47,11 +59,13 @@
 		<beans:property name="cacheProducers" value="false" />
 		<beans:property name="cacheConsumers" value="false" />
 		<beans:property name="reconnectOnException" value="true" />
-		<!-- <beans:property name="exceptionListener" ref="connectionFactoryExceptionListener"/> -->
+		<beans:property name="exceptionListener"
+			ref="connectionFactoryExceptionListener" />
 	</beans:bean>
 
 	<!-- RabbitMq -->
-	<rabbit:connection-factory id="rabbitConnectionFactory" />
+	<rabbit:connection-factory id="rabbitConnectionFactory"
+		host="localhost" />
 
 	<rabbit:template id="amqpTemplate" connection-factory="rabbitConnectionFactory" />
 
@@ -65,22 +79,61 @@
 		</rabbit:bindings>
 	</rabbit:direct-exchange>
 
-	<publish-subscribe-channel id="toRabbit" task-executor="messageExecutor"/>
+	<publish-subscribe-channel id="toRabbit"
+		task-executor="messageExecutor" />
 
-	<publish-subscribe-channel id="bookIdsToRabbit" task-executor="messageExecutor"/>
+	<publish-subscribe-channel id="albumIdsToRabbit"
+		task-executor="messageExecutor" />
+
+	<publish-subscribe-channel id="bookIdsToRabbit"
+		task-executor="messageExecutor" />
 
 	<int-amqp:outbound-channel-adapter
-	channel="toRabbit" amqp-template="amqpTemplate" exchange-name="si.test.exchange"
-	routing-key="si.test.binding" />
-		
+		channel="toRabbit" amqp-template="amqpTemplate" exchange-name="si.test.exchange"
+		routing-key="si.test.binding" />
+
+	<chain id="albumRabbitChain" input-channel="albumIdsToRabbit"
+		output-channel="toRabbit">
+		<service-activator
+			expression="@albumServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+	</chain>
+
 	<chain id="bookRabbitChain" input-channel="bookIdsToRabbit"
 		output-channel="toRabbit">
-		<service-activator expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
+		<service-activator
+			expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
 		<splitter />
 		<object-to-json-transformer />
 	</chain>
 
 	<!-- Kafka -->
+
+	<publish-subscribe-channel id="toKafka"
+		task-executor="messageExecutor" />
+
+	<publish-subscribe-channel id="albumIdsToKafka"
+		task-executor="messageExecutor" />
+
+	<publish-subscribe-channel id="bookIdsToKafka"
+		task-executor="messageExecutor" />
+
+	<chain id="albumKafkaChain" input-channel="albumIdsToRabbit"
+		output-channel="toKafka">
+		<service-activator
+			expression="@albumServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+	</chain>
+
+	<chain id="bookKafkaChain" input-channel="bookIdsToRabbit"
+		output-channel="toKafka">
+		<service-activator
+			expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+	</chain>
 
 	<int-kafka:producer-context id="kafkaProducerContext">
 		<int-kafka:producer-configurations>
@@ -95,6 +148,13 @@
 		</int-kafka:producer-configurations>
 	</int-kafka:producer-context>
 
+	<int-kafka:outbound-channel-adapter
+		kafka-producer-context-ref="kafkaProducerContext" auto-startup="false"
+		channel="toKafka">
+		<!-- <poller fixed-delay="1000" time-unit="MILLISECONDS"
+			receive-timeout="0" task-executor="messageExecutor" /> -->
+	</int-kafka:outbound-channel-adapter>
+
 	<!-- ZeroMq -->
 
 	<beans:bean id="jeroMqPub"
@@ -102,20 +162,35 @@
 		init-method="init" destroy-method="cleanUp" />
 
 	<!-- ActiveMQ -->
-	<publish-subscribe-channel id="toActiveMQ" task-executor="messageExecutor"/>
+	<publish-subscribe-channel id="toActiveMQ"
+		task-executor="messageExecutor" />
 
-	<publish-subscribe-channel id="bookIdsToActiveMQ" task-executor="messageExecutor"/>
+	<publish-subscribe-channel id="albumIdsToActiveMQ"
+		task-executor="messageExecutor" />
+
+	<publish-subscribe-channel id="bookIdsToActiveMQ"
+		task-executor="messageExecutor" />
 
 	<beans:bean id="searchUpdateTopic" class="org.apache.activemq.command.ActiveMQTopic">
 		<beans:constructor-arg value="com.mediahound.search.update.topic" />
 	</beans:bean>
 
-	<chain id="bookActiveMQ" input-channel="bookIdsToActiveMQ">
-		<service-activator expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
+	<chain id="albumActiveMQ" input-channel="albumIdsToActiveMQ">
+		<service-activator
+			expression="@albumServiceImpl.findEntries(payload[0], payload[1])" />
 		<splitter />
 		<object-to-json-transformer />
-		<jms:outbound-channel-adapter 
-		destination="searchUpdateTopic" />
+		<jms:outbound-channel-adapter
+			destination="searchUpdateTopic" />
+	</chain>
+
+	<chain id="bookActiveMQ" input-channel="bookIdsToActiveMQ">
+		<service-activator
+			expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+		<jms:outbound-channel-adapter
+			destination="searchUpdateTopic" />
 	</chain>
 
 	<!-- Gateway for sending job related data -->
@@ -144,9 +219,9 @@
 		Topic for job proxy event updates <beans:bean id="jobProxyEventUpdateTopic" 
 		class="org.apache.activemq.command.ActiveMQTopic"> <beans:constructor-arg 
 		value="com.sony.spe.mc.mh.job.event.update.topic"/> </beans:bean> -->
-<!-- Task Config  -->
-<task:executor id="messageExecutor" pool-size="25"
-                   queue-capacity="10000"/>
-                  <!--  rejection-policy="DISCARD_OLDEST"/> -->
+	<!-- Task Config -->
+	<task:executor id="messageExecutor" pool-size="35"
+		queue-capacity="20000" />
+	<!-- rejection-policy="DISCARD_OLDEST"/> -->
 
 </beans:beans>

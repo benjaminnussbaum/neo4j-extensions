@@ -21,7 +21,14 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.server.CommunityNeoServer;
 import org.neo4j.server.helpers.CommunityServerBuilder;
 import org.springframework.data.neo4j.server.ProvidedClassPathXmlApplicationContext;
+import org.springframework.integration.Message;
+import org.springframework.integration.MessageHeaders;
+import org.springframework.integration.channel.QueueChannel;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mediahound.graph.domain.Album;
+import com.mediahound.graph.domain.Book;
+import com.mediahound.graph.test.domain.AlbumDataOnDemand;
 import com.mediahound.graph.test.domain.BookDataOnDemand;
 /**
  * Test server deploys successfully.
@@ -37,7 +44,17 @@ public class DeployTest {
     
     private ProvidedClassPathXmlApplicationContext ctx;
     
+    private AlbumDataOnDemand albumData;
+    
     private BookDataOnDemand bookData;
+    
+    private QueueChannel jmsQueueChannel;
+    
+    private QueueChannel amqpQueueChannel;
+    
+    private QueueChannel kafkaQueueChannel;
+    
+    private ObjectMapper objectMapper= new ObjectMapper();
 
     @Before
     public void before() throws IOException {
@@ -53,7 +70,11 @@ public class DeployTest {
         ctx = new ProvidedClassPathXmlApplicationContext( db, new String[]{
                 "META-INF/spring/test-springContext.xml"
         } );
+        albumData = ctx.getBean("albumDataOnDemand", AlbumDataOnDemand.class);
         bookData = ctx.getBean("bookDataOnDemand", BookDataOnDemand.class);
+        amqpQueueChannel = ctx.getBean("amqpQueueChannel", QueueChannel.class);
+        jmsQueueChannel = ctx.getBean("jmsQueueChannel", QueueChannel.class);
+        kafkaQueueChannel = ctx.getBean("kafkaQueueChannel", QueueChannel.class);
         serverSocket.close();
     }
 
@@ -75,13 +96,105 @@ public class DeployTest {
         Assert.assertEquals(node.getProperty("createdTime").toString(), result.getUser().getCreatedTime().toString());
         tx.success();
         tx.close();
+        albumData.init();
+        bookData.init();
     }
     
     @Test
-    public void shouldIndexBooks() {
-        bookData.init();
+    public void shouldIndexAlbumsActiveMq() throws Exception {
+        albumData.getManyNewPersisted();
+        Response response = getIndexClient().indexAlbumsActiveMq();
+        Message<String> message = null;
+        int count = 0;
+        while ((message = (Message<String>) jmsQueueChannel.receive(1000)) != null) {
+            MessageHeaders headers = message.getHeaders();
+            Long time = (Long) headers.get("timestamp");
+            String string = message.getPayload();
+            Album album = objectMapper.readValue(string, Album.class);
+            album.hashCode();
+//            if (time >= start && jobIds.contains(proxy.getId())) {
+//                count++;
+//            }
+            count++;
+        }
+        Assert.assertTrue(count > 0);
+    }
+    
+    @Test
+    public void shouldIndexBooksActiveMq() throws Exception {
         bookData.getManyNewPersisted();
-        Response response = getIndexClient().indexBooksZero();
+        Response response = getIndexClient().indexBooksActiveMq();
+        Message<String> message = null;
+        int count = 0;
+        while ((message = (Message<String>) jmsQueueChannel.receive(1000)) != null) {
+            MessageHeaders headers = message.getHeaders();
+            Long time = (Long) headers.get("timestamp");
+            String string = message.getPayload();
+            Book book = objectMapper.readValue(string, Book.class);
+            book.hashCode();
+//            if (time >= start && jobIds.contains(proxy.getId())) {
+//                count++;
+//            }
+            count++;
+        }
+        Assert.assertTrue(count > 0);
+    }
+    
+    @Test
+    public void shouldIndexAlbumsRabbitMq() throws Exception {
+        albumData.getManyNewPersisted();
+        Response response = getIndexClient().indexAlbumsRabbitMq();
+        Message<Album> message = null;
+        int count = 0;
+        while ((message = (Message<Album>) amqpQueueChannel.receive(1000)) != null) {
+            MessageHeaders headers = message.getHeaders();
+            Long time = (Long) headers.get("timestamp");
+            Album album = message.getPayload();
+            album.hashCode();
+//            if (time >= start && jobIds.contains(proxy.getId())) {
+//                count++;
+//            }
+            count++;
+        }
+        Assert.assertTrue(count > 0);
+    }
+    
+    @Test
+    public void shouldIndexBooksRabbitMq() throws Exception {
+        bookData.getManyNewPersisted();
+        Response response = getIndexClient().indexBooksRabbitMq();
+        Message<Book> message = null;
+        int count = 0;
+        while ((message = (Message<Book>) amqpQueueChannel.receive(1000)) != null) {
+            MessageHeaders headers = message.getHeaders();
+            Long time = (Long) headers.get("timestamp");
+            Book book = message.getPayload();
+            book.hashCode();
+//            if (time >= start && jobIds.contains(proxy.getId())) {
+//                count++;
+//            }
+            count++;
+        }
+        Assert.assertTrue(count > 0);
+    }
+    
+    @Test
+    public void shouldIndexBooksKafka() throws Exception {
+        bookData.getManyNewPersisted();
+        Response response = getIndexClient().indexBooksKafka();
+        Message<Book> message = null;
+        int count = 0;
+        while ((message = (Message<Book>) kafkaQueueChannel.receive(1000)) != null) {
+            MessageHeaders headers = message.getHeaders();
+            Long time = (Long) headers.get("timestamp");
+            Book book = message.getPayload();
+            book.hashCode();
+//            if (time >= start && jobIds.contains(proxy.getId())) {
+//                count++;
+//            }
+            count++;
+        }
+        Assert.assertTrue(count > 0);
     }
 
     private UserClient getClient() {

@@ -14,6 +14,33 @@ import javax.ws.rs.core.Response;
 @Path("/search/index")
 public interface SearchIndexClient {
 
+    
+    /**
+     * @return Status 200 on success.
+     */
+    @POST
+    @Path("/zero/albums")
+    Response indexAlbumsZero() ;
+    
+    /**
+     * @return Status 200 on success.
+     */
+    @POST
+    @Path("/kafka/albums")
+    Response indexAlbumsKafka() ;
+    
+    /**
+     * @return Status 200 on success.
+     */
+    @POST
+    @Path("/activemq/albums")
+    Response indexAlbumsActiveMq();
+    /**
+     * @return Status 200 on success.
+     */
+    @POST
+    @Path("/rabbitmq/albums")
+    Response indexAlbumsRabbitMq();
 
     /**
      * @return Status 200 on success.
