@@ -45,6 +45,12 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
+		
+		<!-- eu.codearte  -->
+		<dependency>
+            <groupId>eu.codearte</groupId>
+            <artifactId>fairyland</artifactId>
+        </dependency>
 
 		<!-- org.apache.activemq -->
 		<dependency>

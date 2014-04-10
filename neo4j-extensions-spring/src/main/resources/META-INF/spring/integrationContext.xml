@@ -5,6 +5,7 @@
 	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
 	xmlns:int-amqp="http://www.springframework.org/schema/integration/amqp"
 	xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+	xmlns:zeromq="http://www.springframework.org/schema/integration/zeromq"
 	xmlns:task="http://www.springframework.org/schema/task"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans
 			http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
@@ -15,6 +16,7 @@
 			http://www.springframework.org/schema/integration/jms
 			http://www.springframework.org/schema/integration/jms/spring-integration-jms-3.0.xsd
 			http://www.springframework.org/schema/integration/kafka http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
+			http://www.springframework.org/schema/integration/zeromq http://www.springframework.org/schema/integration/zeromq/spring-integration-zeromq.xsd
 			http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
 
 	<gateway id="outboundGateway"
@@ -32,6 +34,10 @@
 		<method name="sendAlbumRangeToKafka" request-channel="albumIdsToKafka"
 			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
 		<method name="sendBookRangeToKafka" request-channel="bookIdsToKafka"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
+		<method name="sendAlbumRangeToZeroMq" request-channel="albumIdsToZeroMQ"
+			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
+		<method name="sendBookRangeToZeroMq" request-channel="bookIdsToZeroMQ"
 			payload-expression="T(java.util.Arrays).asList(#args[0],#args[1])" />
 	</gateway>
 
@@ -82,6 +88,8 @@
 	<publish-subscribe-channel id="toRabbit"
 		task-executor="messageExecutor" />
 
+	<channel id="toRabbitDirect" />
+
 	<publish-subscribe-channel id="albumIdsToRabbit"
 		task-executor="messageExecutor" />
 
@@ -90,6 +98,10 @@
 
 	<int-amqp:outbound-channel-adapter
 		channel="toRabbit" amqp-template="amqpTemplate" exchange-name="si.test.exchange"
+		routing-key="si.test.binding" />
+
+	<int-amqp:outbound-channel-adapter
+		channel="toRabbitDirect" amqp-template="amqpTemplate" exchange-name="si.test.exchange"
 		routing-key="si.test.binding" />
 
 	<chain id="albumRabbitChain" input-channel="albumIdsToRabbit"
@@ -111,7 +123,14 @@
 	<!-- Kafka -->
 
 	<publish-subscribe-channel id="toKafka"
-		task-executor="messageExecutor" />
+		task-executor="messageExecutor">
+		<interceptors>
+			<wire-tap channel="loggingChannel2" />
+		</interceptors>
+	</publish-subscribe-channel>
+
+	<logging-channel-adapter id="loggingChannel2"
+		log-full-message="true" level="ERROR" />
 
 	<publish-subscribe-channel id="albumIdsToKafka"
 		task-executor="messageExecutor" />
@@ -119,20 +138,26 @@
 	<publish-subscribe-channel id="bookIdsToKafka"
 		task-executor="messageExecutor" />
 
-	<chain id="albumKafkaChain" input-channel="albumIdsToRabbit"
+	<chain id="albumKafkaChain" input-channel="albumIdsToKafka"
 		output-channel="toKafka">
 		<service-activator
 			expression="@albumServiceImpl.findEntries(payload[0], payload[1])" />
 		<splitter />
 		<object-to-json-transformer />
+		<header-enricher>
+			<header name="topic" value="test2" />
+		</header-enricher>
 	</chain>
 
-	<chain id="bookKafkaChain" input-channel="bookIdsToRabbit"
+	<chain id="bookKafkaChain" input-channel="bookIdsToKafka"
 		output-channel="toKafka">
 		<service-activator
 			expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
 		<splitter />
 		<object-to-json-transformer />
+		<header-enricher>
+			<header name="topic" value="test2" />
+		</header-enricher>
 	</chain>
 
 	<int-kafka:producer-context id="kafkaProducerContext">
@@ -143,25 +168,55 @@
 			<int-kafka:producer-configuration
 				broker-list="localhost:9092" topic="test2" compression-codec="default"
 				async="true" />
-			<int-kafka:producer-configuration
-				broker-list="localhost:9092" topic="regextopic.*" compression-codec="default" />
+			<!-- <int-kafka:producer-configuration broker-list="localhost:9092" topic="regextopic.*" 
+				compression-codec="default" /> -->
 		</int-kafka:producer-configurations>
 	</int-kafka:producer-context>
 
 	<int-kafka:outbound-channel-adapter
-		kafka-producer-context-ref="kafkaProducerContext" auto-startup="false"
+		kafka-producer-context-ref="kafkaProducerContext" auto-startup="true"
 		channel="toKafka">
-		<!-- <poller fixed-delay="1000" time-unit="MILLISECONDS"
-			receive-timeout="0" task-executor="messageExecutor" /> -->
+		<!-- <poller fixed-delay="1000" time-unit="MILLISECONDS" receive-timeout="0" 
+			task-executor="messageExecutor" /> -->
 	</int-kafka:outbound-channel-adapter>
 
 	<!-- ZeroMq -->
+	<channel id="toZeroDirect" />
+	<publish-subscribe-channel id="albumIdsToZeroMQ"
+		task-executor="messageExecutor" />
 
-	<beans:bean id="jeroMqPub"
-		class="org.neo4j.extensions.spring.common.JeroMQPublisher"
-		init-method="init" destroy-method="cleanUp" />
+	<publish-subscribe-channel id="bookIdsToZeroMQ"
+		task-executor="messageExecutor" />
+
+	<publish-subscribe-channel id="toZeroMQ"
+		task-executor="messageExecutor" />
+
+	<zeromq:producer-context id="zeroMqProducerContext"
+		port="9998" />
+
+	<zeromq:outbound-channel-adapter
+		zeromq-producer-context-ref="zeroMqProducerContext" channel="toZeroMQ" />
+	<zeromq:outbound-channel-adapter
+		zeromq-producer-context-ref="zeroMqProducerContext" channel="toZeroDirect" />
+
+	<chain id="albumZeroMQ" input-channel="albumIdsToZeroMQ"
+		output-channel="toZeroMQ">
+		<service-activator
+			expression="@albumServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+	</chain>
+
+	<chain id="bookZeroMQ" input-channel="bookIdsToZeroMQ"
+		output-channel="toZeroMQ">
+		<service-activator
+			expression="@bookServiceImpl.findEntries(payload[0], payload[1])" />
+		<splitter />
+		<object-to-json-transformer />
+	</chain>
 
 	<!-- ActiveMQ -->
+	<channel id="toActiveDirect" />
 	<publish-subscribe-channel id="toActiveMQ"
 		task-executor="messageExecutor" />
 
@@ -192,6 +247,9 @@
 		<jms:outbound-channel-adapter
 			destination="searchUpdateTopic" />
 	</chain>
+	
+	<jms:outbound-channel-adapter channel="toActiveDirect"
+			destination="searchUpdateTopic" />
 
 	<!-- Gateway for sending job related data -->
 	<!-- <gateway id="jobGateway" service-interface="com.sony.spe.mc.mh.gateway.JobSendingGateway"> 

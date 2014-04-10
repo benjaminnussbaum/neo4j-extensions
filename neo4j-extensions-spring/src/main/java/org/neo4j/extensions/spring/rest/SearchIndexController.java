@@ -52,7 +52,7 @@ public class SearchIndexController implements SearchIndexClient {
         LOGGER.info(String.format("Total Books: %d", booksSize.intValue()));
         int totalPages = booksSize.intValue() % BATCH_SIZE;
         for (int i = 0; i <= totalPages; i++) {
-            outboundGateway.sendBookRangeToActiveMq(i, BATCH_SIZE);
+            outboundGateway.sendBookRangeToZeroMq(i, BATCH_SIZE);
         }
         return Response.ok(String.format("Total Books: %d", booksSize.intValue())).build();
     }
@@ -136,7 +136,7 @@ public class SearchIndexController implements SearchIndexClient {
         LOGGER.info(String.format("Total Albums: %d", albumSize.intValue()));
         int totalPages = albumSize.intValue() % BATCH_SIZE;
         for (int i = 0; i <= totalPages; i++) {
-            outboundGateway.sendAlbumRangeToActiveMq(i, BATCH_SIZE);
+            outboundGateway.sendAlbumRangeToZeroMq(i, BATCH_SIZE);
         }
         return Response.ok(String.format("Total Albums: %d", albumSize.intValue())).build();
     }

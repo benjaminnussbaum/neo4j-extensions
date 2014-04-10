@@ -33,48 +33,49 @@
 	<channel id="jmsQueueChannel">
 		<queue />
 	</channel>
-	
+
 	<!-- AMQP -->
 
 	<int-amqp:inbound-channel-adapter id="testAmqp"
-		queue-names="si.test.queue" connection-factory="rabbitConnectionFactory" 
-		channel="testAmqpInChannel"/>
-	
+		queue-names="si.test.queue" connection-factory="rabbitConnectionFactory"
+		channel="testAmqpInChannel" />
+
 	<channel id="testAmqpInChannel" />
-	<json-to-object-transformer input-channel="testAmqpInChannel" output-channel="amqpQueueChannel" 
-		/>
+	<json-to-object-transformer input-channel="testAmqpInChannel"
+		output-channel="amqpQueueChannel" />
 
 	<channel id="amqpQueueChannel">
 		<queue />
 	</channel>
-	
-	<!-- Kafka  -->
-	<channel id="inputFromKafka"/>
+
+	<!-- Kafka -->
+	<channel id="inputFromKafka" />
 	<channel id="kafkaQueueChannel">
 		<queue />
+		<!-- <interceptors> <wire-tap channel="loggingChannel1" /> </interceptors> -->
 	</channel>
 
-	<int-kafka:zookeeper-connect id="zookeeperConnect" zk-connect="localhost:2181"
-			zk-connection-timeout="6000"
-			zk-session-timeout="6000"
-			zk-sync-time="2000"/>
+	<logging-channel-adapter id="loggingChannel1"
+		log-full-message="true" level="ERROR" />
 
-	<int-kafka:inbound-channel-adapter id="kafkaInboundChannelAdapter"
-			kafka-consumer-context-ref="consumerContext"
-			auto-startup="false"
-			channel="inputFromKafka">
-		<poller fixed-delay="1" time-unit="MILLISECONDS"/>
+
+	<int-kafka:zookeeper-connect id="zookeeperConnect"
+		zk-connect="localhost:2181" zk-connection-timeout="6000"
+		zk-session-timeout="6000" zk-sync-time="2000" />
+
+	<int-kafka:inbound-channel-adapter
+		id="kafkaInboundChannelAdapter" kafka-consumer-context-ref="consumerContext"
+		group-id="default2" auto-startup="true" channel="kafkaQueueChannel">
+		<poller fixed-delay="100" time-unit="MILLISECONDS" />
 	</int-kafka:inbound-channel-adapter>
 
-	<!-- <beans:bean id="kafkaReflectionDecoder" class="org.springframework.integration.kafka.serializer.avro.AvroReflectDatumBackedKafkaDecoder">
-		<beans:constructor-arg type="java.lang.Class" value="java.lang.String"/>
-	</beans:bean>
+	<!-- <beans:bean id="kafkaReflectionDecoder" class="org.springframework.integration.kafka.serializer.avro.AvroReflectDatumBackedKafkaDecoder"> 
+		<beans:constructor-arg type="java.lang.Class" value="java.lang.String"/> 
+		</beans:bean> <beans:bean id="kafkaSpecificDecoder" class="org.springframework.integration.kafka.serializer.avro.AvroSpecificDatumBackedKafkaDecoder"> 
+		<beans:constructor-arg value="com.mediahound.graph.domain.Book" /> </beans:bean> -->
 
-	<beans:bean id="kafkaSpecificDecoder" class="org.springframework.integration.kafka.serializer.avro.AvroSpecificDatumBackedKafkaDecoder">
-		<beans:constructor-arg value="com.mediahound.graph.domain.Book" />
-	</beans:bean> -->
-
-	<beans:bean id="consumerProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+	<beans:bean id="consumerProperties"
+		class="org.springframework.beans.factory.config.PropertiesFactoryBean">
 		<beans:property name="properties">
 			<beans:props>
 				<beans:prop key="auto.offset.reset">smallest</beans:prop>
@@ -86,32 +87,52 @@
 	</beans:bean>
 
 	<int-kafka:consumer-context id="consumerContext"
-			consumer-timeout="1000"
-			zookeeper-connect="zookeeperConnect" consumer-properties="consumerProperties">
+		consumer-timeout="1000" zookeeper-connect="zookeeperConnect"
+		consumer-properties="consumerProperties">
 		<int-kafka:consumer-configurations>
-			<!-- <int-kafka:consumer-configuration group-id="default1"
-					value-decoder="kafkaSpecificDecoder"
-					key-decoder="kafkaReflectionDecoder"
-					max-messages="5000">
-				<int-kafka:topic id="test1" streams="4"/>
-			</int-kafka:consumer-configuration> -->
-			<int-kafka:consumer-configuration group-id="default2"
-					max-messages="50">
-			<int-kafka:topic id="test2" streams="4"/>
+			<!-- <int-kafka:consumer-configuration group-id="default1" value-decoder="kafkaSpecificDecoder" 
+				key-decoder="kafkaReflectionDecoder" max-messages="5000"> <int-kafka:topic 
+				id="test1" streams="4"/> </int-kafka:consumer-configuration> -->
+			<int-kafka:consumer-configuration
+				group-id="default2" max-messages="50">
+				<int-kafka:topic-filter pattern="test2"
+					streams="4" />
 			</int-kafka:consumer-configuration>
-			<int-kafka:consumer-configuration group-id="default3"
-					max-messages="10">
-				<int-kafka:topic-filter pattern="regextopic.*" streams="4" exclude="false"/>
-			</int-kafka:consumer-configuration>
+			<!-- <int-kafka:consumer-configuration group-id="default3" max-messages="10"> 
+				<int-kafka:topic-filter pattern="regextopic.*" streams="4" exclude="false"/> 
+				</int-kafka:consumer-configuration> -->
 		</int-kafka:consumer-configurations>
 	</int-kafka:consumer-context>
-<!-- 
-	<beans:bean id="partitionlessTransformer" class="org.springframework.integration.samples.kafka.outbound.PartitionlessTransformer"/>
-
-	<transformer  ref="partitionlessTransformer" method="transform"
-		input-channel="inputFromKafka"
+	<!-- <beans:bean id="partitionlessTransformer" class="org.springframework.integration.samples.kafka.outbound.PartitionlessTransformer"/> 
+		<transformer ref="partitionlessTransformer" method="transform" input-channel="inputFromKafka" 
 		output-channel="kafkaQueueChannel"/> -->
-	<json-to-object-transformer input-channel="inputFromKafka" output-channel="kafkaQueueChannel" 
-		/>
+	<!-- <json-to-object-transformer input-channel="inputFromKafka" output-channel="kafkaQueueChannel" 
+		/> -->
+
+	<!-- ZeroMq -->
+	<beans:bean id="jeroMqSub"
+		class="org.neo4j.extensions.spring.common.ZeroMQSubscriber"
+		init-method="init" destroy-method="cleanUp">
+		<beans:property name="port" value="9998" />
+	</beans:bean>
+
+	<!-- <inbound-channel-adapter ref="jeroMqSub" method="recieveMessage" channel="zeroMqQueueChannel"> 
+		<poller fixed-rate="1" /> </inbound-channel-adapter> -->
+
+	<channel id="zeroMqQueueChannel">
+		<queue />
+		<interceptors>
+			<wire-tap channel="loggingChannel1" />
+		</interceptors>
+	</channel>
+
+	<!-- <bean id="jeroMqSubWrapper" class="ZeroMQInbound">
+		<constructor-arg ref="jeroMqSub" />
+	</bean> -->
+
+	<beans:bean id="pollThread" class="java.lang.Thread" init-method="start"
+		destroy-method="interrupt">
+		<beans:constructor-arg ref="jeroMqSub" />
+	</beans:bean>
 
 </beans:beans>

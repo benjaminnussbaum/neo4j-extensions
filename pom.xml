@@ -54,6 +54,13 @@
 		<module>neo4j-extensions-spring</module>
 	</modules>
 
+	<repositories>
+		<repository>
+			<id>codearte</id>
+			<url>http://dl.bintray.com/codearte/public</url>
+		</repository>
+	</repositories>
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.asm>3.1</version.asm>
@@ -531,6 +538,13 @@
 				<artifactId>commons-lang</artifactId>
 				<version>2.4</version>
 				<scope>provided</scope>
+			</dependency>
+
+			<!-- eu.codearte -->
+			<dependency>
+				<groupId>eu.codearte</groupId>
+				<artifactId>fairyland</artifactId>
+				<version>0.0.8</version>
 			</dependency>
 
 			<!-- io.netty -->

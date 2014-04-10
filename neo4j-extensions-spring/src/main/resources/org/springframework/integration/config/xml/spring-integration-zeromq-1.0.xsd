@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://www.springframework.org/schema/integration/zeromq"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:beans="http://www.springframework.org/schema/beans"
+            xmlns:tool="http://www.springframework.org/schema/tool"
+            xmlns:integration="http://www.springframework.org/schema/integration"
+            targetNamespace="http://www.springframework.org/schema/integration/zeromq"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.springframework.org/schema/beans"/>
+    <xsd:import namespace="http://www.springframework.org/schema/tool"/>
+    <xsd:import namespace="http://www.springframework.org/schema/integration"
+                schemaLocation="http://www.springframework.org/schema/integration/spring-integration.xsd"/>
+
+    <xsd:annotation>
+        <xsd:documentation><![CDATA[
+			Defines the configuration elements for the Spring Integration
+			Kafka Adapter.
+		]]></xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="producer-context">
+        <xsd:annotation>
+            <xsd:documentation><![CDATA[
+                    Defines a producer context.
+                ]]></xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:attribute name="id" type="xsd:string" use="required"/>
+            <xsd:attribute name="port" use="optional"
+                           type="xsd:integer">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Kafka producer properties to use for all producers
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="consumer-context">
+        <xsd:annotation>
+            <xsd:documentation><![CDATA[
+                    Defines a producer context.
+                ]]></xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="consumer-configurations" minOccurs="0" maxOccurs="1">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[
+                            Groups kafka topic configurations.
+                        ]]></xsd:documentation>
+                    </xsd:annotation>
+                    <xsd:complexType>
+                        <xsd:choice>
+                            <xsd:element name="consumer-configuration" maxOccurs="unbounded">
+                                <xsd:annotation>
+                                    <xsd:documentation><![CDATA[
+                                    Declares a kafka topic configuration which drives how and where a topic is sent to broker/s.
+                                ]]></xsd:documentation>
+                                </xsd:annotation>
+                                <xsd:complexType>
+                                    <xsd:choice>
+                                        <xsd:element name="topic" maxOccurs="unbounded">
+                                            <xsd:complexType>
+                                                <xsd:attribute name="id" type="xsd:string" use="required"/>
+                                                <xsd:attribute name="streams" type="xsd:string" use="required"/>
+                                            </xsd:complexType>
+                                        </xsd:element>
+                                        <xsd:element name="topic-filter" maxOccurs="1">
+                                            <xsd:complexType>
+                                                <xsd:attribute name="pattern" type="xsd:string" use="required">
+                                                     <xsd:annotation>
+			                                            <xsd:documentation><![CDATA[
+			                                                   Regex pattern to match topic
+			                                           ]]></xsd:documentation>
+			                                            <xsd:appinfo>
+			                                                <tool:annotation kind="direct">
+			                                                    <tool:expected-type type="java.lang.String"/>
+			                                                </tool:annotation>
+			                                            </xsd:appinfo>
+                                                     </xsd:annotation>
+                                                </xsd:attribute>
+                                                <xsd:attribute name="streams" type="xsd:string" use="required">
+                                                    <xsd:annotation>
+			                                            <xsd:documentation><![CDATA[
+			                                                   Number of streams (threads) to use to consume messages
+			                                           ]]></xsd:documentation>
+			                                            <xsd:appinfo>
+			                                                <tool:annotation kind="direct">
+			                                                    <tool:expected-type type="java.lang.String"/>
+			                                                </tool:annotation>
+			                                            </xsd:appinfo>
+                                                     </xsd:annotation>
+                                                </xsd:attribute>
+                                                <xsd:attribute name="exclude" type="xsd:boolean" use="optional" default="false">
+                                                    <xsd:annotation>
+			                                            <xsd:documentation><![CDATA[
+			                                                   If exclude is false, it uses whitelist to include topics matching given pattern.
+			                                                   If exclude is true, it uses blacklist to exclude topics matching given patttern.
+			                                                   Default value is false.
+			                                           ]]></xsd:documentation>
+			                                            <xsd:appinfo>
+			                                                <tool:annotation kind="direct">
+			                                                    <tool:expected-type type="java.lang.String"/>
+			                                                </tool:annotation>
+			                                            </xsd:appinfo>
+                                                    </xsd:annotation>
+                                                </xsd:attribute>
+                                            </xsd:complexType>
+                                        </xsd:element>
+                                    </xsd:choice>
+                                    <xsd:attribute name="max-messages" use="optional">
+                                        <xsd:annotation>
+                                            <xsd:documentation><![CDATA[
+                                                       Indicates max messages to aggregate in a single call to receive
+                                               ]]></xsd:documentation>
+                                            <xsd:appinfo>
+                                                <tool:annotation kind="direct">
+                                                    <tool:expected-type type="java.lang.String"/>
+                                                </tool:annotation>
+                                            </xsd:appinfo>
+                                        </xsd:annotation>
+                                    </xsd:attribute>
+                                    <xsd:attribute name="group-id" use="required">
+                                        <xsd:annotation>
+                                            <xsd:documentation><![CDATA[
+                                                   Indicates the Kafka consumer group id
+                                           ]]></xsd:documentation>
+                                            <xsd:appinfo>
+                                                <tool:annotation kind="direct">
+                                                    <tool:expected-type type="java.lang.String"/>
+                                                </tool:annotation>
+                                            </xsd:appinfo>
+                                        </xsd:annotation>
+                                    </xsd:attribute>
+                                    <xsd:attribute name="value-decoder" use="optional"
+                                                   type="xsd:string">
+                                        <xsd:annotation>
+                                            <xsd:documentation>
+                                                Kafka Server Bean Name
+                                            </xsd:documentation>
+                                        </xsd:annotation>
+                                    </xsd:attribute>
+                                    <xsd:attribute name="key-decoder" use="optional"
+                                                   type="xsd:string">
+                                        <xsd:annotation>
+                                            <xsd:documentation>
+                                                Kafka Server Bean Name
+                                            </xsd:documentation>
+                                        </xsd:annotation>
+                                    </xsd:attribute>
+                                </xsd:complexType>
+                            </xsd:element>
+                        </xsd:choice>
+                    </xsd:complexType>
+
+                </xsd:element>
+            </xsd:sequence>
+            <xsd:attribute name="id" type="xsd:string" use="required"/>
+            <xsd:attribute name="consumer-timeout" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+                           Indicates the Kafka consumer timeout ms
+                   ]]></xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="direct">
+                            <tool:expected-type type="java.lang.String"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="zookeeper-connect" use="required"
+                           type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Kafka Server Bean Name
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="consumer-properties" use="optional"
+                           type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Kafka consumer properties to use for all consumers
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="inbound-channel-adapter">
+        <xsd:annotation>
+            <xsd:documentation>
+                The definition for the Spring Integration Kafka
+                Inbound Channel Adapter.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="integration:poller" minOccurs="0" maxOccurs="1"/>
+            </xsd:sequence>
+            <xsd:attributeGroup ref="coreKafkaComponentAttributes"/>
+            <xsd:attribute name="channel" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="org.springframework.integration.core.MessageChannel"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="send-timeout" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+						Allows you to specify how long this inbound-channel-adapter
+						will wait for the message (containing the retrieved entities)
+						to be sent successfully to the message channel, before throwing
+						an exception.
+
+						Keep in mind that when sending to a DirectChannel, the
+						invocation will occur in the sender's thread so the failing
+						of the send operation may be caused by other components
+						further downstream. By default the Inbound Channel Adapter
+						will wait indefinitely. The value is specified in milliseconds.
+					]]>
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="group-id" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+                                       Indicates the Kafka consumer group id
+                               ]]></xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="direct">
+                            <tool:expected-type type="java.lang.String"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="kafka-consumer-context-ref" use="required"
+                           type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Kafka Server Bean Name
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:attributeGroup name="coreKafkaComponentAttributes">
+        <xsd:attribute name="id" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Identifies the underlying Spring bean definition, which is an
+                    instance of either 'EventDrivenConsumer' or 'PollingConsumer',
+                    depending on whether the component's input channel is a
+                    'SubscribableChannel' or 'PollableChannel'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="auto-startup" default="true" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Flag to indicate that the component should start automatically
+                    on startup (default true).
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:simpleType>
+                <xsd:union memberTypes="xsd:boolean xsd:string"/>
+            </xsd:simpleType>
+        </xsd:attribute>
+    </xsd:attributeGroup>
+
+    <xsd:element name="outbound-channel-adapter">
+        <xsd:annotation>
+            <xsd:documentation>
+                Defines zeroMq outbound channel adapter that writes the contents of the
+                Message to pub-sub.
+            </xsd:documentation>
+        </xsd:annotation>
+
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="integration:poller" minOccurs="0" maxOccurs="1"/>
+            </xsd:sequence>
+            <xsd:attribute name="id" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        Identifies the underlying Spring bean definition, which is an
+                        instance of either 'EventDrivenConsumer' or 'PollingConsumer',
+                        depending on whether the component's input channel is a
+                        'SubscribableChannel' or 'PollableChannel'.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="zeromq-producer-context-ref" use="required"
+                           type="xsd:string">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        ZeroMq producer context reference.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="channel" type="xsd:string">
+                <xsd:annotation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:expected-type type="org.springframework.integration.core.MessageChannel"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

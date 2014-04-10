@@ -21,5 +21,9 @@ public interface OutboundGateway {
     public void sendAlbumRangeToKafka(int start, int end);
 
     public void sendBookRangeToKafka(int start, int end);
+    
+    public void sendAlbumRangeToZeroMq(int start, int end);
+
+    public void sendBookRangeToZeroMq(int start, int end);
 
 }

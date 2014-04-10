@@ -1,0 +1,1 @@
+http\://www.springframework.org/schema/integration/zeromq=org.neo4j.extensions.spring.zero.parser.ZeroMqNamespaceHandler
