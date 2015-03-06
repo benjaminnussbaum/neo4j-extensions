@@ -105,16 +105,6 @@
       <artifactId>spring-data-neo4j</artifactId>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.data</groupId>
-      <artifactId>spring-data-neo4j-aspects</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.data</groupId>
-      <artifactId>spring-data-neo4j-tx</artifactId>
-      <scope>compile</scope>
-    </dependency>
 
     <!-- org.neo4j -->
     <dependency>

@@ -67,8 +67,8 @@
     <version.org.neo4j>2.1.7</version.org.neo4j>
     <version.org.slf4j>1.6.2</version.org.slf4j>
     <version.org.springframework>4.0.9.RELEASE</version.org.springframework>
-    <version.org.springframework.data.commons>1.9.2.RELEASE</version.org.springframework.data.commons>
-    <version.org.springframework.data.neo4j>3.2.2.RELEASE</version.org.springframework.data.neo4j>
+    <version.org.springframework.data.commons>1.10.0.BUILD-SNAPSHOT</version.org.springframework.data.commons>
+    <version.org.springframework.data.neo4j>4.0.0.BUILD-SNAPSHOT</version.org.springframework.data.neo4j>
     <version.java>1.7</version.java>
   </properties>
 
@@ -575,16 +575,6 @@
       <dependency>
         <groupId>org.springframework.data</groupId>
         <artifactId>spring-data-neo4j</artifactId>
-        <version>${version.org.springframework.data.neo4j}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.data</groupId>
-        <artifactId>spring-data-neo4j-aspects</artifactId>
-        <version>${version.org.springframework.data.neo4j}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.data</groupId>
-        <artifactId>spring-data-neo4j-tx</artifactId>
         <version>${version.org.springframework.data.neo4j}</version>
       </dependency>
 
@@ -1473,10 +1463,6 @@
               <aspectLibrary>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-aspects</artifactId>
-              </aspectLibrary>
-              <aspectLibrary>
-                <groupId>org.springframework.data</groupId>
-                <artifactId>spring-data-neo4j-aspects</artifactId>
               </aspectLibrary>
             </aspectLibraries>
             <complianceLevel>${version.java}</complianceLevel>
