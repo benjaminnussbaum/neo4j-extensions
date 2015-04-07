@@ -1,6 +1,6 @@
 package org.neo4j.extensions.examples.social.repository;
 
-import org.springframework.data.neo4j.annotation.Query;
+import org.neo4j.ogm.annotation.Query;
 import org.springframework.data.neo4j.repository.GraphRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;

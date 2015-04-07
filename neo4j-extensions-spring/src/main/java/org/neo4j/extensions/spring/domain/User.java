@@ -12,11 +12,11 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.neo4j.annotation.Fetch;
-import org.springframework.data.neo4j.annotation.GraphId;
-import org.springframework.data.neo4j.annotation.Indexed;
-import org.springframework.data.neo4j.annotation.NodeEntity;
-import org.springframework.data.neo4j.annotation.RelatedTo;
+import org.neo4j.ogm.annotation.Fetch;
+import org.neo4j.ogm.annotation.GraphId;
+import org.neo4j.ogm.annotation.Indexed;
+import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.RelatedTo;
 import org.springframework.data.neo4j.support.index.IndexType;
 
 import org.neo4j.extensions.common.client.UserFullView;
@@ -74,7 +74,7 @@ public class User implements Serializable, Comparable<User>
 
     @JsonView(UserFullView.class)
     @Fetch
-    @RelatedTo(type = RelationshipConstants.FRIEND_OF, direction = Direction.OUTGOING)
+    @Relationship(type = RelationshipConstants.FRIEND_OF, direction = Direction.OUTGOING)
     private Set<User> friends;
 
     /**

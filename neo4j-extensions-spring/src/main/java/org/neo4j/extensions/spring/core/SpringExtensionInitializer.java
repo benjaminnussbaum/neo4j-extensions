@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.Configuration;
 import org.springframework.data.neo4j.server.SpringPluginInitializer;
-import org.springframework.data.neo4j.support.Neo4jTemplate;
+import org.springframework.data.neo4j.template.Neo4jTemplate;
 import org.springframework.util.Assert;
 
 import org.neo4j.extensions.spring.repository.UserRepository;
